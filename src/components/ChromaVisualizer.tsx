@@ -62,7 +62,7 @@ export function ChromaVisualizer({ chroma, chord }: Props) {
       const barWidth = Math.min(36, slot * 0.62);
       const barTop = 6;
       const barHeight = height - LABEL_HEIGHT - barTop;
-      ctx.font = '600 12px system-ui, sans-serif';
+      ctx.font = `600 12px ${styles.fontFamily}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 

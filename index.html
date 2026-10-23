@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeChorder</title>
+    <script>
+      // Apply the saved theme before first paint (see src/theme.ts) to avoid a flash.
+      (function () {
+        var pref = null;
+        try {
+          pref = localStorage.getItem('dechorder-theme');
+        } catch (e) {}
+        var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

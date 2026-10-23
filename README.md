@@ -13,6 +13,8 @@ Everything runs locally in the browser: no server, no account, and your practice
 | **Reaction Mode** | Random chords from a set you choose appear one at a time; you change to each as fast as you can. A from → to heatmap shows how fast every transition is, and the "focus on my slowest changes" option gives you more of the ones you struggle with. |
 | **Rhythm Mode** | Play a progression along with a metronome while the chords scroll past. Each change is graded Perfect, Good, Early, Late or Miss on how close your strum lands to the beat, and the tempo rises 5 BPM after each clean loop. Includes 7 preset progressions (pop, '50s, minor, 12-bar blues…), a custom progression builder, and timing calibration. |
 
+The app has Bright and Dark themes, or Auto to follow your system setting; pick one with the switch in the top bar.
+
 26 open chords are supported: C, D, E, F, G, A, Am, Dm, Em, the common 7ths (A7, B7, C7, D7, E7, G7, Am7, Dm7, Em7, Cmaj7, Fmaj7), and sus/add chords (Asus2, Asus4, Dsus2, Dsus4, Esus4, Cadd9). F uses the small four-string shape (xx3211).
 
 ## Requirements

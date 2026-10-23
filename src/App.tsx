@@ -5,6 +5,7 @@ import { OneMinuteChangesScreen } from './screens/OneMinuteChangesScreen';
 import { ReactionModeScreen } from './screens/ReactionModeScreen';
 import { RhythmModeScreen } from './screens/RhythmModeScreen';
 import { useDetectorSettings } from './storage/useDetectorSettings';
+import { useTheme, type ThemePref } from './theme';
 
 const SCREENS = [
   { id: 'detector', label: 'Detector' },
@@ -14,6 +15,12 @@ const SCREENS = [
 ] as const;
 
 type ScreenId = (typeof SCREENS)[number]['id'];
+
+const THEMES: { id: ThemePref; label: string; icon: string; title: string }[] = [
+  { id: 'auto', label: 'Auto', icon: '◐', title: 'Follow my system setting' },
+  { id: 'light', label: 'Bright', icon: '☀', title: 'Bright theme' },
+  { id: 'dark', label: 'Dark', icon: '☾', title: 'Dark theme' },
+];
 
 function screenFromHash(): ScreenId {
   const id = window.location.hash.replace(/^#\/?/, '');
@@ -34,6 +41,7 @@ export default function App() {
   const [settings, updateSettings] = useDetectorSettings();
   const detector = useDetectorEngine(settings.gateDb);
   const screen = useHashScreen();
+  const [themePref, setThemePref] = useTheme();
   const listening = detector.status === 'listening';
 
   return (
@@ -47,6 +55,21 @@ export default function App() {
             </a>
           ))}
         </nav>
+        <div className="theme-switch" role="radiogroup" aria-label="Theme">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="radio"
+              aria-checked={themePref === t.id}
+              title={t.title}
+              onClick={() => setThemePref(t.id)}
+            >
+              <span aria-hidden="true">{t.icon}</span>
+              <span className="theme-label">{t.label}</span>
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className={`primary${listening ? ' stop' : ''}`}
