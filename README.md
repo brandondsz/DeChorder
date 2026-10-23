@@ -37,6 +37,22 @@ Open http://localhost:5173, click **Start listening** and allow microphone acces
 
 Browsers only allow microphone access on `localhost` or over HTTPS, so if you host the built app somewhere, serve it over HTTPS.
 
+## Deploying to GitHub Pages
+
+The repo includes a workflow ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) that runs the tests, builds the app and publishes it on every push to `main`.
+
+One-time setup:
+
+1. Push the repo to GitHub as `DeChorder`.
+2. In the repo's **Settings → Pages**, set **Source** to **GitHub Actions**.
+3. Push to `main`, or run the workflow by hand from the **Actions** tab.
+
+The site is published at `https://<username>.github.io/DeChorder/`.
+
+Production builds assume they're served from `/DeChorder/` (`base` in [vite.config.ts](vite.config.ts)). If you rename the repo, use a custom domain, or host somewhere else, change `base` to match, or the page will load without its scripts and styles. The dev server always runs at the root.
+
+Practice history is saved per site address, so sessions recorded on `localhost` don't appear on the hosted site, and the reverse.
+
 ### Scripts
 
 | Command | Does |
