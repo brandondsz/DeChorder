@@ -33,11 +33,48 @@ export interface RhythmSettings {
   latencyMs: number | null;
 }
 
+export interface SongSettings {
+  /** Practice speed per song, as a percentage of its tempo, keyed by song key. */
+  speedPercent: Record<string, number>;
+}
+
 export interface SettingsMap {
   detector: DetectorSettings;
   drill: DrillSettings;
   reaction: ReactionSettings;
   rhythm: RhythmSettings;
+  songs: SongSettings;
+}
+
+/** A song the user wrote or pasted in. The chart text is the source of truth. */
+export interface SongRecord {
+  id?: number;
+  source: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SongSessionSection {
+  label: string;
+  changes: number;
+  clean: number;
+}
+
+export interface SongSession {
+  id?: number;
+  /** "song:<id>" for the user's songs, "example:<id>" for built-ins. */
+  songKey: string;
+  /** "Whole song", or the looped section's label. */
+  scope: string;
+  speedPercent: number;
+  bpm: number;
+  changes: number;
+  clean: number;
+  landed: number;
+  stalls: number;
+  sections: SongSessionSection[];
+  /** Epoch milliseconds. */
+  startedAt: number;
 }
 
 export interface RhythmSession {
@@ -93,12 +130,21 @@ interface DeChorderDB extends DBSchema {
     value: RhythmSession;
     indexes: { byProgression: string };
   };
+  songs: {
+    key: number;
+    value: SongRecord;
+  };
+  songSessions: {
+    key: number;
+    value: SongSession;
+    indexes: { bySong: string };
+  };
 }
 
 let dbPromise: Promise<IDBPDatabase<DeChorderDB>> | null = null;
 
 function db() {
-  dbPromise ??= openDB<DeChorderDB>('dechorder', 4, {
+  dbPromise ??= openDB<DeChorderDB>('dechorder', 5, {
     upgrade(database, oldVersion) {
       if (oldVersion < 1) database.createObjectStore('settings');
       if (oldVersion < 2) {
@@ -109,6 +155,11 @@ function db() {
       if (oldVersion < 4) {
         const sessions = database.createObjectStore('rhythmSessions', { keyPath: 'id', autoIncrement: true });
         sessions.createIndex('byProgression', 'progressionKey');
+      }
+      if (oldVersion < 5) {
+        database.createObjectStore('songs', { keyPath: 'id', autoIncrement: true });
+        const sessions = database.createObjectStore('songSessions', { keyPath: 'id', autoIncrement: true });
+        sessions.createIndex('bySong', 'songKey');
       }
     },
   });
@@ -144,6 +195,35 @@ export async function addRhythmSession(session: RhythmSession): Promise<number> 
 /** Sessions for a progression, oldest first. */
 export async function getRhythmSessions(progressionKey: string): Promise<RhythmSession[]> {
   const sessions = await (await db()).getAllFromIndex('rhythmSessions', 'byProgression', progressionKey);
+  return sessions.sort((a, b) => a.startedAt - b.startedAt);
+}
+
+export async function getSongs(): Promise<SongRecord[]> {
+  return (await db()).getAll('songs');
+}
+
+/** Insert or update a song; returns its id. */
+export async function saveSong(song: SongRecord): Promise<number> {
+  return (await db()).put('songs', song);
+}
+
+/** Deletes a song and its practice history. */
+export async function deleteSong(id: number): Promise<void> {
+  const database = await db();
+  const tx = database.transaction(['songs', 'songSessions'], 'readwrite');
+  await tx.objectStore('songs').delete(id);
+  const sessions = tx.objectStore('songSessions').index('bySong');
+  for await (const cursor of sessions.iterate(`song:${id}`)) await cursor.delete();
+  await tx.done;
+}
+
+export async function addSongSession(session: SongSession): Promise<number> {
+  return (await db()).add('songSessions', session);
+}
+
+/** Sessions for a song, oldest first. */
+export async function getSongSessions(songKey: string): Promise<SongSession[]> {
+  const sessions = await (await db()).getAllFromIndex('songSessions', 'bySong', songKey);
   return sessions.sort((a, b) => a.startedAt - b.startedAt);
 }
 

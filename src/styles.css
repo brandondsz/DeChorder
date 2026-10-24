@@ -170,14 +170,14 @@ h2 {
   white-space: nowrap;
 }
 
-@media (max-width: 1080px) {
-  /* Logo, theme and Start on top; tabs get their own row. */
-  .topbar .tabs {
-    order: 3;
-    flex-basis: 100%;
-    margin-left: 0;
-  }
+/* Logo, theme and Start on top; the tabs get a row of their own. */
+.topbar .tabs {
+  order: 3;
+  flex-basis: 100%;
+  margin-left: -4px;
+}
 
+@media (max-width: 760px) {
   /* Icons only; the label stays for screen readers. */
   .theme-label {
     position: absolute;
@@ -1623,6 +1623,389 @@ h2 {
   }
   .grade-counts {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Songs: library */
+
+.song-library {
+  display: grid;
+  gap: 16px;
+}
+
+.song-library .lede {
+  margin: 8px 0 14px;
+}
+
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.song-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--chip-bg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
+}
+
+.song-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow);
+}
+
+.song-card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
+.song-card-artist,
+.song-card-meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.song-card-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.song-card-chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.mini-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
+}
+
+/* Songs: editor */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-input {
+  width: 100%;
+  min-height: 420px;
+  resize: vertical;
+  font: 0.9rem/1.5 ui-monospace, 'Cascadia Code', Consolas, monospace;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.syntax-help {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.syntax-help summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.syntax-help ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.syntax-help code,
+.hint code {
+  font-size: 0.85em;
+  background: var(--chip-bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.problems {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.problems li {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border-left: 4px solid var(--warn);
+  background: var(--chip-bg);
+}
+
+.problems li.error {
+  border-left-color: var(--danger);
+}
+
+.secondary.danger {
+  color: var(--danger);
+}
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--text);
+}
+
+.song-title {
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.song-chord-diagrams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.song-chord-diagrams figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.song-chord-diagrams figcaption {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.song-chord-diagrams .chord-diagram {
+  width: 76px;
+}
+
+.hint.inline {
+  display: inline;
+  margin: 0;
+}
+
+/* Songs: the lyric sheet */
+
+.song-sheet {
+  position: relative;
+  overflow-y: auto;
+  padding: 4px 4px 12px;
+}
+
+.song-sheet.preview {
+  max-height: 460px;
+  margin-top: 10px;
+}
+
+.sheet-section {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin: 14px 0 4px;
+}
+
+.sheet-section:first-child {
+  margin-top: 0;
+}
+
+.sheet-gap {
+  height: 10px;
+}
+
+.sheet-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding: 2px 6px;
+  border-radius: 8px;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+
+.sheet-line.active {
+  background: color-mix(in srgb, var(--pop-yellow) 30%, transparent);
+}
+
+.sheet-line.dimmed,
+.sheet-section.dimmed {
+  opacity: 0.35;
+}
+
+.seg {
+  display: inline-flex;
+  flex-direction: column;
+  white-space: pre;
+}
+
+.seg-chord {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent);
+  min-height: 1.4em;
+  padding-right: 6px;
+  border-radius: 6px;
+}
+
+.sheet-line.chord-only .seg-chord {
+  padding: 0 8px;
+  margin-right: 6px;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.seg-beats {
+  font-size: 0.72em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.seg-lyric {
+  font-size: 1.05rem;
+}
+
+.seg-chord.current {
+  background: var(--pop-orange);
+  color: var(--on-pop);
+  padding: 0 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.seg-chord.played {
+  color: var(--text-muted);
+}
+
+.seg-chord.perfect,
+.seg-chord.good {
+  color: var(--good);
+}
+
+.seg-chord.early,
+.seg-chord.late {
+  color: var(--warn);
+}
+
+.seg-chord.miss {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+/* Songs: playing */
+
+.song-play {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  gap: 16px;
+}
+
+.song-play-sheet .song-sheet {
+  height: 54vh;
+  min-height: 320px;
+}
+
+.song-play-side {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.song-play-side .rhythm-chord .chord-diagram {
+  width: 120px;
+}
+
+.song-play-side .rhythm-chord.next .drill-chord-name {
+  font-size: 2.6rem;
+}
+
+/* Songs: results */
+
+.result-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  text-shadow: 3px 3px 0 var(--pop-yellow);
+}
+
+.section-ratings {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.section-ratings li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr 10rem;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-name {
+  font-weight: 700;
+}
+
+.section-ratings .bar,
+.section-ratings .bar-fill {
+  display: block;
+}
+
+.section-rating {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-ratings .solid .section-rating {
+  color: var(--good);
+}
+
+.section-ratings .close .section-rating {
+  color: var(--warn);
+}
+
+.section-ratings .work .section-rating {
+  color: var(--danger);
+}
+
+.result-actions.wrap {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .song-play {
+    grid-template-columns: 1fr;
+  }
+  .song-play-sheet .song-sheet {
+    height: 40vh;
   }
 }
 

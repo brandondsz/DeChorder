@@ -50,6 +50,14 @@ export const isClean = (grade: Grade) => grade === 'perfect' || grade === 'good'
 
 const beatMs = (bpm: number) => 60000 / bpm;
 
+/** How early/late a strum may land and still count for a change, given the beat and chord length. */
+export function changeWindows(beatDurationMs: number, chordBeats: number): { early: number; late: number } {
+  return {
+    early: Math.min(MAX_EARLY_MS, beatDurationMs * 0.75),
+    late: Math.min(MAX_LATE_MS, beatDurationMs * chordBeats * 0.5),
+  };
+}
+
 export function gradeFor(offsetMs: number): Grade {
   const abs = Math.abs(offsetMs);
   if (abs <= PERFECT_MS) return 'perfect';
@@ -146,11 +154,7 @@ export class RhythmRun {
   }
 
   private windows(target: RhythmTarget) {
-    const beat = beatMs(this.loopBpms[target.loop]);
-    return {
-      early: Math.min(MAX_EARLY_MS, beat * 0.75),
-      late: Math.min(MAX_LATE_MS, beat * this.config.beatsPerChord * 0.5),
-    };
+    return changeWindows(beatMs(this.loopBpms[target.loop]), this.config.beatsPerChord);
   }
 
   /** Grade a committed chord against the nearest open target for it. */

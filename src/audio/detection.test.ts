@@ -67,4 +67,18 @@ describe('ChordStabilizer', () => {
     s.push('C');
     expect(s.push('C')).toBe('C');
   });
+
+  it('flags a fresh commit once per held streak, including the same chord after silence', () => {
+    const s = new ChordStabilizer(2);
+    s.push('G');
+    s.push('G');
+    expect(s.justCommitted).toBe(true);
+    s.push('G');
+    expect(s.justCommitted).toBe(false);
+    s.push(null);
+    s.push('G');
+    expect(s.justCommitted).toBe(false);
+    s.push('G');
+    expect(s.justCommitted).toBe(true);
+  });
 });

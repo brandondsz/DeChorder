@@ -4,6 +4,7 @@ import { DetectorScreen } from './screens/DetectorScreen';
 import { OneMinuteChangesScreen } from './screens/OneMinuteChangesScreen';
 import { ReactionModeScreen } from './screens/ReactionModeScreen';
 import { RhythmModeScreen } from './screens/RhythmModeScreen';
+import { SongModeScreen } from './screens/SongModeScreen';
 import { useDetectorSettings } from './storage/useDetectorSettings';
 import { useTheme, type ThemePref } from './theme';
 
@@ -12,6 +13,7 @@ const SCREENS = [
   { id: 'changes', label: 'One-Minute Changes' },
   { id: 'reaction', label: 'Reaction Mode' },
   { id: 'rhythm', label: 'Rhythm Mode' },
+  { id: 'songs', label: 'Songs' },
 ] as const;
 
 type ScreenId = (typeof SCREENS)[number]['id'];
@@ -92,6 +94,7 @@ export default function App() {
       {screen === 'changes' && <OneMinuteChangesScreen detector={detector} />}
       {screen === 'reaction' && <ReactionModeScreen detector={detector} />}
       {screen === 'rhythm' && <RhythmModeScreen detector={detector} />}
+      {screen === 'songs' && <SongModeScreen detector={detector} />}
     </div>
   );
 }

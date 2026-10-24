@@ -16,6 +16,7 @@ import {
   type RhythmHit,
 } from '../drill/rhythm';
 import { GRADE_LABELS, RhythmLane } from '../drill/RhythmLane';
+import { describeHit, readyToPlay, usePlayAlong } from '../drill/usePlayAlong';
 import { useClock } from '../hooks/useClock';
 import { addRhythmSession, getRhythmSessions, type RhythmSession, type RhythmSettings } from '../storage/db';
 import {
@@ -46,12 +47,6 @@ function percent(x: number | null): string {
   return x === null ? '–' : `${Math.round(x * 100)}%`;
 }
 
-function describeOffset(ms: number | null): string {
-  if (ms === null) return '';
-  if (Math.abs(ms) <= 15) return 'on the beat';
-  return `${Math.abs(Math.round(ms))} ms ${ms < 0 ? 'early' : 'late'}`;
-}
-
 export function RhythmModeScreen({ detector }: { detector: Detector }) {
   const { engine } = detector;
   const [settings, updateSettings] = useRhythmSettings();
@@ -70,17 +65,8 @@ export function RhythmModeScreen({ detector }: { detector: Detector }) {
   }, [key]);
   useEffect(reloadHistory, [reloadHistory]);
 
-  const ensureAudio = async () => {
-    if (engine.getSnapshot().status !== 'listening') {
-      await engine.start();
-      if (engine.getSnapshot().status !== 'listening' && !import.meta.env.DEV) return false;
-    }
-    await engine.prepareAudio();
-    return true;
-  };
-
   const begin = async () => {
-    if (!(await ensureAudio())) return;
+    if (!(await readyToPlay(engine))) return;
     engine.setChordSet(chordSet);
     const run = new RhythmRun(
       {
@@ -97,7 +83,7 @@ export function RhythmModeScreen({ detector }: { detector: Detector }) {
   };
 
   const beginCalibration = async () => {
-    if (!(await ensureAudio())) return;
+    if (!(await readyToPlay(engine))) return;
     const start = performance.now() + START_LEAD_MS;
     const beat = 60000 / CALIBRATION_BPM;
     const clicks = Array.from({ length: CALIBRATION_CLICKS }, (_, i) => start + i * beat);
@@ -350,59 +336,23 @@ interface InProgressProps {
 
 function RhythmInProgress({ run, detector, chordSet, onStop, onDone }: InProgressProps) {
   const { engine } = detector;
-  const [frame, setFrame] = useState({ beat: -1, version: 0 });
-  const [feedback, setFeedback] = useState<{ hit: RhythmHit; at: number } | null>(null);
-  const [tempoUpAt, setTempoUpAt] = useState<number | null>(null);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
-
-  useEffect(() => {
-    return engine.onChordChange((chordId, _time, strumTime) => {
-      const hit = run.handleChord(chordId, strumTime);
-      if (hit) setFeedback({ hit, at: performance.now() });
-    });
-  }, [engine, run]);
-
-  useEffect(() => {
-    let raf = 0;
-    let nextClick = 0;
-    let lastBeat = -1;
-    let lastVersion = -1;
-    let knownLoops = run.loopBpms.length;
-    let finished = false;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const now = performance.now();
-      const missed = run.tick(now);
-      if (missed.length) setFeedback({ hit: missed[missed.length - 1], at: now });
-      if (run.loopBpms.length > knownLoops) {
-        const prev = run.loopBpms[run.loopBpms.length - 2];
-        if (run.loopBpms[run.loopBpms.length - 1] > prev) setTempoUpAt(run.loopStart(run.loopBpms.length - 1));
-        knownLoops = run.loopBpms.length;
-      }
-      while (nextClick < run.totalBeats) {
-        const t = run.beatTime(nextClick);
-        if (t === null || t > now + 200) break;
-        engine.scheduleClick(t, clickKind(run, nextClick));
-        nextClick++;
-      }
-      const beat = Math.floor(run.beatAt(now));
-      if (beat !== lastBeat || run.version !== lastVersion) {
-        lastBeat = beat;
-        lastVersion = run.version;
-        setFrame({ beat, version: run.version });
-      }
-      if (!finished && run.done(now)) {
-        finished = true;
-        engine.beep(990, 0.3);
-        onDoneRef.current(run);
-      }
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [run, engine]);
+  const frame = usePlayAlong<RhythmHit>(
+    run,
+    engine,
+    (beat) => clickKind(run, beat),
+    () => onDone(run),
+  );
+  const { feedback } = frame;
 
   const now = performance.now();
+  // The most recent loop that sped up, for the "Tempo up!" flash around its start.
+  let tempoUpAt: number | null = null;
+  for (let l = run.loopBpms.length - 1; l > 0; l--) {
+    if (run.loopBpms[l] > run.loopBpms[l - 1]) {
+      tempoUpAt = run.loopStart(l);
+      break;
+    }
+  }
   const countIn = frame.beat < COUNT_IN_BEATS;
   const currentIndex = run.targetIndexAt(Math.max(frame.beat, COUNT_IN_BEATS));
   const current = countIn ? run.targets[0] : run.targets[currentIndex];
@@ -413,7 +363,6 @@ function RhythmInProgress({ run, detector, chordSet, onStop, onDone }: InProgres
     ? frame.beat
     : (frame.beat - COUNT_IN_BEATS) % run.config.beatsPerChord;
   const tempoUp = tempoUpAt !== null && now >= tempoUpAt - 1500 && now < tempoUpAt + 2500;
-  const showFeedback = feedback && now - feedback.at < 1500;
 
   return (
     <main className="drill-run">
@@ -457,10 +406,8 @@ function RhythmInProgress({ run, detector, chordSet, onStop, onDone }: InProgres
         </section>
       </div>
 
-      <p className={`rhythm-feedback${showFeedback ? ` ${feedback.hit.grade}` : ''}`} aria-live="polite">
-        {showFeedback
-          ? `${GRADE_LABELS[feedback.hit.grade]}${feedback.hit.offsetMs !== null ? ` · ${describeOffset(feedback.hit.offsetMs)}` : ''} · ${feedback.hit.from} → ${feedback.hit.chord}`
-          : ' '}
+      <p className={`rhythm-feedback${feedback ? ` ${feedback.hit.grade}` : ''}`} aria-live="polite">
+        {feedback ? describeHit(feedback.hit) : ' '}
       </p>
 
       <div className="drill-footer">

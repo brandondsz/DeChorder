@@ -12,10 +12,39 @@ Everything runs locally in the browser: no server, no account, and your practice
 | **One-Minute Changes** | The classic drill: switch between two chords as many times as you can in 30 s, 1 min or 2 min. Tracks changes per minute, average and fastest change time, and your personal best for each pair. |
 | **Reaction Mode** | Random chords from a set you choose appear one at a time; you change to each as fast as you can. A from → to heatmap shows how fast every transition is, and the "focus on my slowest changes" option gives you more of the ones you struggle with. |
 | **Rhythm Mode** | Play a progression along with a metronome while the chords scroll past. Each change is graded Perfect, Good, Early, Late or Miss on how close your strum lands to the beat, and the tempo rises 5 BPM after each clean loop. Includes 7 preset progressions (pop, '50s, minor, 12-bar blues…), a custom progression builder, and timing calibration. |
+| **Songs** | Paste a chord chart and play the whole song along with the metronome while the lyric sheet scrolls. The main goal is to keep going: two or more missed changes in a row count as a *stall*. Each section is rated, and the results suggest looping your weakest section at a slower speed. Practise at 50–100% of the song's tempo. Comes with three original practice songs. |
 
 The app has Bright and Dark themes, or Auto to follow your system setting; pick one with the switch in the top bar.
 
 26 open chords are supported: C, D, E, F, G, A, Am, Dm, Em, the common 7ths (A7, B7, C7, D7, E7, G7, Am7, Dm7, Em7, Cmaj7, Fmaj7), and sus/add chords (Asus2, Asus4, Dsus2, Dsus4, Esus4, Cadd9). F uses the small four-string shape (xx3211).
+
+### Writing a song chart
+
+Song charts use the common "ChordPro" style, with each chord in square brackets right before the word it lands on:
+
+```
+{title: Open Road}
+{tempo: 84}
+
+[Verse]
+[G]Woke up early, [D]coffee on the stove
+
+[Chorus]
+[C]Open [G]road, [D:2]take me [Em:2]where you go
+
+{chorus}
+```
+
+| Write | Means |
+|---|---|
+| `[G]` | G, lasting one bar |
+| `[D:2]` | D, lasting 2 beats (`[G:8]` is two bars in 4/4) |
+| `[N.C.]` | No chord: a rest |
+| `[Verse]`, `[Chorus]`, `[Bridge]`… on their own line | Start a section (`{start_of_chorus}` and `{section: Name}` also work) |
+| `{chorus}` | Repeat the last chorus |
+| `{title: …}`, `{artist: …}`, `{tempo: 90}`, `{time: 3/4}` | Song details |
+
+Slash chords like `C/G` are played as `C`. Chords outside the supported list (e.g. Bm, F♯m) are flagged in the editor and need to be swapped for an open chord before the song can be played. Your songs and lyrics are stored only in your browser.
 
 ## Requirements
 
@@ -86,7 +115,9 @@ Practice history is saved per site address, so sessions recorded on `localhost` 
 
 **Strum timing.** Rhythm Mode needs to know *when* you strummed, and the chord detector only confirms a chord about 250 ms after the strum. So [detector.ts](src/audio/detector.ts) also runs a second, short analyser on a low-passed copy of the input and detects strum attacks within about 35 ms. The chord detector supplies *which* chord was played and the strum detector supplies *when*. Metronome clicks are pitched at 2.7–4 kHz, above both analysers' ranges, so a mic that hears your speakers doesn't mistake them for strums or notes.
 
-**Drills.** The scoring logic for each mode is plain TypeScript, separate from React, in [src/drill/](src/drill/): `changeDrill.ts`, `reaction.ts` and `rhythm.ts`. That makes it easy to unit-test.
+**Drills.** The scoring logic for each mode is plain TypeScript, separate from React, in [src/drill/](src/drill/): `changeDrill.ts`, `reaction.ts` and `rhythm.ts`. Songs use [src/song/chordpro.ts](src/song/chordpro.ts) to parse charts and [src/song/songRun.ts](src/song/songRun.ts) to score a play-through. Rhythm Mode and Songs share one play-along loop for clicks, grading and misses, in [usePlayAlong.ts](src/drill/usePlayAlong.ts). Keeping the logic separate makes it easy to unit-test.
+
+**Coming back in.** The detector normally reports a chord only when it *changes*. After at least 300 ms of silence it reports the same chord again, so a player who stops and comes back in on the chord they were on still gets credit.
 
 **Storage.** Settings and session history are kept in the browser's IndexedDB through [idb](https://github.com/jakearchibald/idb) ([src/storage/db.ts](src/storage/db.ts)). The data lives only in that browser profile: clearing site data for the app deletes it, and it doesn't sync between browsers or machines.
 
@@ -100,6 +131,7 @@ src/
 ├── drill/          # Drill logic (pure TS) and drill-specific components
 ├── hooks/          # useClock and formatting helpers
 ├── screens/        # One component per tab
+├── song/           # Chord chart parser, song play-through scoring, lyric sheet, example songs
 ├── storage/        # IndexedDB schema and settings hooks
 ├── App.tsx         # Tabs and the shared detector engine
 └── styles.css      # All styles; light and dark themes via CSS variables
@@ -142,5 +174,6 @@ dechorder.onChordChange((id, t, strumTime) => console.log(id, t - strumTime, 'ms
 - Practice home: daily warm-up built from your weakest changes, practice streaks
 - Barre chords (F, Bm, B, C♯m, F♯m)
 - Lowest-note detection to separate look-alike chords
-- Song mode: real songs' chord charts in Rhythm Mode
+- Clean chord check: tell you which string sounds muted or buzzing
+- Strumming patterns
 - Chord Hero: a game-style mode built on Rhythm Mode

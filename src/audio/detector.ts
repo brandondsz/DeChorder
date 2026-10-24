@@ -6,6 +6,7 @@ import { ChordStabilizer } from './stabilizer';
 export type DetectorStatus = 'idle' | 'starting' | 'listening' | 'error';
 
 /**
+ * Fires when a chord changes, and when the same chord comes back after a pause.
  * `time` is when the chord was committed; `strumTime` is the attack that produced it
  * (the most recent onset before the commit), which is what rhythm scoring should use.
  */
@@ -53,6 +54,8 @@ const ONSET_REFRACTORY_MS = 120;
 const ONSET_STEP_DB = 2;
 /** How far back from a chord commit to look for the strum that caused it. */
 const STRUM_SEARCH_MS = 800;
+/** Silence this long before a chord makes the same chord count as played again. */
+const RESTRIKE_SILENCE_MS = 300;
 /** Used when no onset was found: typical strum-to-commit delay. */
 const FALLBACK_COMMIT_DELAY_MS = 250;
 
@@ -97,6 +100,8 @@ export class DetectorEngine {
   private lastOnset = -Infinity;
   private prevShortDb = -Infinity;
   private testVoice: GainNode | null = null;
+  private quietSince: number | null = null;
+  private awaitingRestrike = false;
   private onsets: number[] = [];
   private rafId = 0;
   private templates: ChordTemplate[] = buildTemplates(OPEN_CHORDS);
@@ -380,12 +385,23 @@ export class DetectorEngine {
       for (let i = 0; i < 12; i++) this.chroma[i] *= 0.92;
     }
 
+    if (!audible) {
+      this.quietSince ??= now;
+    } else {
+      if (this.quietSince !== null && now - this.quietSince >= RESTRIKE_SILENCE_MS) this.awaitingRestrike = true;
+      this.quietSince = null;
+    }
+
     const previousId = this.snapshot.chordId;
     const chordId = this.stabilizer.push(topId);
     const live = audible && chordId !== null && topId === chordId;
     const current = candidates.find((c) => c.id === chordId);
     const confidence = live && current ? current.confidence : this.snapshot.confidence;
-    if (chordId !== previousId && chordId !== null) {
+    const fresh = this.stabilizer.justCommitted;
+    // Coming back in on the same chord after a pause counts as playing it again.
+    const restrike = fresh && this.awaitingRestrike && chordId === previousId;
+    if (fresh) this.awaitingRestrike = false;
+    if (chordId !== null && (chordId !== previousId || restrike)) {
       const strumTime = this.strumTimeFor(now);
       this.chordListeners.forEach((l) => l(chordId, now, strumTime));
     }
