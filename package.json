@@ -2,6 +2,8 @@
   "name": "dechorder",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
+  "author": "Brandon D'Souza",
   "type": "module",
   "scripts": {
     "dev": "vite",

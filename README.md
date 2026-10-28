@@ -179,3 +179,9 @@ dechorder.onChordChange((id, t, strumTime) => console.log(id, t - strumTime, 'ms
 - Clean chord check: tell you which string sounds muted or buzzing
 - Strumming patterns
 - Chord Hero: a game-style mode built on Rhythm Mode
+
+## License
+
+DeChorder is released under the [MIT License](LICENSE). Copyright © 2026 Brandon D'Souza.
+
+The bundled fonts, [Righteous](https://fonts.google.com/specimen/Righteous) and [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk), are separate works under the [SIL Open Font License 1.1](https://openfontlicense.org), which allows them to be bundled with MIT-licensed software.
