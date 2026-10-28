@@ -139,6 +139,8 @@ src/
 
 ## Development
 
+**Coding standards.** [CODING_STANDARDS.md](CODING_STANDARDS.md) sets out how TypeScript, React and CSS are written in this project, and what to check before committing.
+
 **Testing without a guitar.** In dev mode (`npm run dev`), every screen has a *Developer: synthetic strum* panel that plays a computer-generated strum straight into the detector, so you can try all the modes with no microphone. These panels are left out of production builds.
 
 **Console access.** In dev mode the audio engine is available as `window.dechorder`, so you can watch events from the browser console:
